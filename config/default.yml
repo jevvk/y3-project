@@ -1,0 +1,18 @@
+yolo:
+  model:
+    config: data/model/yolov3.cfg
+    classes: data/model/yolov3.txt
+    weights: data/model/yolov3.weights
+  detector:
+    conf_threshold: 0.5
+    nms_threshold: 0.4
+    scale: 0.00392
+    input:
+      width: 416
+      height: 416
+
+haarcascade:
+  model: data/model/haarcascade_fullbody.xml
+  detector:
+    scale_factor: 1.05
+    min_neighbours: 2
