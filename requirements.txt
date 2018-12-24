@@ -1,3 +1,4 @@
 numpy
 skimage
+pyyaml
 git+https://github.com/matterport/Mask_RCNN/
