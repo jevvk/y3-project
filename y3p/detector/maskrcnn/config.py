@@ -5,3 +5,4 @@ class InferenceConfig(Config):
   NUM_CLASSES = 1 + 80 # COCO has 80 classes
   GPU_COUNT = 1
   IMAGES_PER_GPU = 1
+  # TODO: ability to select gpu
