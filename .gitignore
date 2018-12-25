@@ -1,4 +1,9 @@
 __pycache__/
 *.pyc
+data/model
+data/**/*.mp4
+data/**/*.mjpeg
+data/**/*.idx
+data/**/*.png
 out/
 logs/
