@@ -1,7 +1,22 @@
+team_classification:
+  file: cache/tclass_params
+  out_directory: data/spiroudome/teams
+  samples: 300
 views:
   - name: camera 2
     file: data/spiroudome/camera2-2.mp4
     index: data/spiroudome/camera2-2.mp4.index
+    width: 1600
+    height: 1200
+    calibration:
+      T: [ -3.36284134858181E+02, -3.10826286858717E+02, 3.04793054378895E+03 ]
+      R: [ 9.32842297377222E-01, -3.60228514525202E-01, -6.37695436341951E-03, 1.14138731599135E-01, 2.78691258869896E-01, 9.53574083214541E-01, -3.41727374046808E-01, -8.90262095987737E-01, 3.01091019916891E-01 ]
+      kc: [ -3.60977535140700E-01, 0.00000000000000E+00, -1.33701558398217E-02, 0.00000000000000E+00, 0.00000000000000E+00 ]
+      fc: [ 1.89792348759109E+03, 1.89792348759109E+03 ]
+      cc: [ 7.99500000000000E+02, 5.99500000000000E+02 ]
+  - name: camera 1
+    file: data/spiroudome/camera1-10.mp4
+    index: data/spiroudome/camera1-10.mp4.index
     width: 1600
     height: 1200
     calibration:

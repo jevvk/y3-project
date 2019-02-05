@@ -1,4 +1,4 @@
-from mrcnn.config import Config
+from y3p.detector.maskrcnn.mrcnn.config import Config
 
 class InferenceConfig(Config):
   NAME = "coco"

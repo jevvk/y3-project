@@ -1,26 +1,46 @@
-import argparse
+import sys
 import yaml
+import argparse
 
-from y3p.logic import main
+from y3p.track import main as track_main
+from y3p.teams.detect import main as teams_detect_main
 
-parser = argparse.ArgumentParser(description='Short sample app')
+def main(args):
+  detector = None
+  config = None
 
-parser.add_argument('config')
-parser.add_argument('--model', choices = ['mrcnn'], default = 'mrcnn')
+  # since mask rcnn uses python2.7 and yolo uses python3
+  # imports are done inside the if
+  if args.model == 'mrcnn':
+    from y3p.detector.maskrcnn import MaskRCNNDetector
+    detector = MaskRCNNDetector()
+  elif args.model == 'yolo':
+    from y3p.detector.yolo import YoloDetector
+    detector = YoloDetector()
+  elif args.model == 'none':
+    pass
+  else:
+    # this shouldn't happen
+    sys.exit(1)
 
-args = parser.parse_args()
+  with open(args.config, 'r') as stream:
+    config = yaml.load(stream)
 
-detector = None
-config = None
+    if args.mode == 'track':
+      track_main(config, detector)
+    elif args.mode == 'teams-detect':
+      teams_detect_main(config, detector)
+    else:
+      # this shouldn't happen
+      sys.exit(1)
 
-if args.model == 'mrcnn':
-  from y3p.detector.maskrcnn import MaskRCNNDetector
-  detector = MaskRCNNDetector()
-else:
-  # TODO yolo detector
-  pass
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description='Short sample app')
 
-with open(args.config, 'r') as stream:
-  config = yaml.load(stream)
+  parser.add_argument('config')
+  parser.add_argument('--model', choices = ['mrcnn', 'none'], default = 'mrcnn')
+  parser.add_argument('--mode', choices = ['teams-detect', 'teams-train', 'track'], default = 'track')
 
-  main(config, detector)
+  args = parser.parse_args()
+
+  main(args)

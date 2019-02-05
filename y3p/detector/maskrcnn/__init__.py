@@ -1,7 +1,8 @@
 import os
 import numpy as np
+import tensorflow as tf
 
-from mrcnn import model
+from y3p.detector.maskrcnn.mrcnn import model
 
 from y3p import PROJECT_DIR
 from y3p.detector import Detector
@@ -17,12 +18,13 @@ class MaskRCNNDetector(Detector):
 
   def __init__(self):
     self.config = InferenceConfig()
-    self.model = model.MaskRCNN(mode="inference", model_dir = LOGS_PATH, config = self.config)
+    self.model = model.MaskRCNN(mode="inference", model_dir=LOGS_PATH, config=self.config)
 
-    self.model.load_weights(MODEL_PATH, by_name = True)
+    self.model.load_weights(MODEL_PATH, by_name=True)
 
   def forward(self, frame):
     result = self.model.detect([frame], verbose = 0)[0]
+
     detections = []
 
     boxes = result['rois']
@@ -34,10 +36,12 @@ class MaskRCNNDetector(Detector):
 
     for i in range(boxes.shape[0]):
       # skip unwanted detections for now
-      if class_names[class_ids[i]] != 'person': continue
-      
+      if class_names[class_ids[i]] != 'person':
+        continue
+
       # skip invalid boundng boxes
-      if not np.any(boxes[i]): continue
+      if not np.any(boxes[i]):
+        continue
 
       # might want to skip scores < 0.5
       

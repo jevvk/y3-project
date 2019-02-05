@@ -7,6 +7,7 @@ import sys
 import os
 import skimage
 import numpy as np
+import datetime
 
 from skimage.measure import find_contours
 import matplotlib.pyplot as plt
@@ -28,7 +29,14 @@ image = image[:, :, 0:3]
 
 detector = MaskRCNNDetector()
 
+a = datetime.datetime.now()
+
 detections = detector.forward(image)
+
+b = datetime.datetime.now()
+c = b - a
+
+print(c)
 
 n = int(sys.argv[2]) if len(sys.argv) > 2 else 0
 x, y, height, width, frame, mask, score = detections[n]
