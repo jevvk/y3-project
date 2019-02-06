@@ -1,5 +1,4 @@
 team_classification:
-  file: cache/tclass_params
   out_directory: data/spiroudome/teams
   samples: 300
 views:

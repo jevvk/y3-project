@@ -4,6 +4,7 @@ import argparse
 
 from y3p.track import main as track_main
 from y3p.teams.detect import main as teams_detect_main
+from y3p.teams.train import main as teams_train_main
 
 def main(args):
   detector = None
@@ -16,7 +17,7 @@ def main(args):
     detector = MaskRCNNDetector()
   elif args.model == 'yolo':
     from y3p.detector.yolo import YoloDetector
-    detector = YoloDetector()
+    detector = YoloDetector(config)
   elif args.model == 'none':
     pass
   else:
@@ -30,6 +31,8 @@ def main(args):
       track_main(config, detector)
     elif args.mode == 'teams-detect':
       teams_detect_main(config, detector)
+    elif args.mode == 'teams-train':
+      teams_train_main(config, detector)
     else:
       # this shouldn't happen
       sys.exit(1)
