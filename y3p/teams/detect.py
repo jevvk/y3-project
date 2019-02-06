@@ -8,7 +8,7 @@ import numpy as np
 from y3p import PROJECT_DIR
 from y3p.space.camera import Camera
 
-FRAMES_TO_SKIP = 12
+FRAMES_TO_SKIP = 36
 
 def main(config, detector):
   """Sample humans from videos and manually classify into team A, team B, and spectators"""
@@ -36,7 +36,7 @@ def main(config, detector):
 
   stop = False
 
-  print('Press z for team A, x for team B, n for spectator, s to skip, b to go back, q to exit...')
+  print('Press z for team A, x for team B, n for spectator, s to skip, q to exit...')
 
   team_a = 0
   team_b = 0
@@ -47,7 +47,7 @@ def main(config, detector):
     if samples >= max_samples:
       break
 
-    for i, capture in enumerate(captures):
+    for _, capture in enumerate(captures):
       ret, frame = capture.read()
 
       if not ret:
@@ -85,11 +85,6 @@ def main(config, detector):
           spectators += 1
         elif key == ord('s'):
           continue
-        elif key == ord('b'):
-          print('Going back.')
-          samples -= 1
-          labels.pop()
-          continue
         elif key == ord('q'):
           print('Exiting.')
           sys.exit(0)
@@ -102,7 +97,7 @@ def main(config, detector):
         np.save(mask_path, mask)
 
         samples += 1
-      
+
       frames_to_skip = FRAMES_TO_SKIP
       
       print('%d samples to do.' % (max_samples - samples))

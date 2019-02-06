@@ -1,5 +1,5 @@
 team_classification:
-  out_directory: data/spiroudome/teams
+  out_directory: data/spiroudome/teams-300
   samples: 300
 views:
   - name: camera 2

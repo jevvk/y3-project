@@ -7,10 +7,11 @@ from functools import reduce
 
 from y3p import PROJECT_DIR
 
-ITERATIONS = 4000
-ITERATIONS_PRINT_PERIOD = 200
+ITERATIONS = 5000
+ITERATIONS_PRINT_PERIOD = 1000
 LEARNING_RATE = 0.1
 TRAINING_SAMPLE_PROBABILITY = 0.75
+NORMALIZED_IMAGE_SIZE = 60
 
 def main(config, _):
   classifier_config = config['team_classification']
@@ -33,6 +34,29 @@ def main(config, _):
     image = cv2.imread(path)
     features[i] = calculate_features(image)
 
+  weights = np.random.rand(3, 768)
+  training_features, training_labels, testing_features, testing_labels = prepare_data(features, labels)
+
+  test_accuracy(testing_features, testing_labels, weights)
+
+  print('Training started.')
+  weights, _ = train_all(training_features, training_labels, weights, ITERATIONS, LEARNING_RATE)
+  test_accuracy(testing_features, testing_labels, weights)
+
+  training_features, training_labels, testing_features, testing_labels = prepare_data(features, labels)
+  weights, _ = train_all(training_features, training_labels, weights, ITERATIONS, LEARNING_RATE)
+  test_accuracy(testing_features, testing_labels, weights)
+
+  training_features, training_labels, testing_features, testing_labels = prepare_data(features, labels)
+  weights, _ = train_all(training_features, training_labels, weights, ITERATIONS, LEARNING_RATE)
+  print('Done training.')
+
+  test_accuracy(testing_features, testing_labels, weights)
+  test_accuracy(features, labels, weights)
+
+def prepare_data(features, labels):
+  total_labels = len(labels)
+
   training_features = []
   testing_features = []
   training_labels = []
@@ -48,20 +72,11 @@ def main(config, _):
 
   print('Stats: %d training samples, %d testing samples' % (len(training_labels), len(testing_labels)))
 
-  weights = np.random.rand(3, 768)
+  return training_features, training_labels, testing_features, testing_labels
 
-  predictions = classify(testing_features, weights)
-  accuracy = np.sum([p == gt for p, gt in zip(predictions, testing_labels)]) / len(testing_labels)
-
-  print('Starting accuracy is %.2f%%' % (accuracy * 100))
-  print('Training started.')
-
-  weights, _ = train_all(training_features, training_labels, weights, ITERATIONS, LEARNING_RATE)
-
-  print('Done %d iterations.' % ITERATIONS)
-
-  predictions = classify(testing_features, weights)
-  accuracy = np.sum([p == gt for p, gt in zip(predictions, testing_labels)]) / len(testing_labels)
+def test_accuracy(features, labels, weights):
+  predictions = classify(features, weights)
+  accuracy = np.sum([p == gt for p, gt in zip(predictions, labels)]) / len(labels)
 
   print('Accuracy is %.2f%%' % (accuracy * 100))
 
@@ -70,7 +85,7 @@ def convert_histogram(hist):
 
 def calculate_features(image):
   # hist = cv2.calcHist([image], [0], np.where(mask, 255, 0).astype(np.uint8), [256], [0, 256])
-  # TO DO: maybe normalise frame size first
+  # image = cv2.resize(image, (NORMALIZED_IMAGE_SIZE, NORMALIZED_IMAGE_SIZE))
 
   b_hist = cv2.calcHist([image], [0], None, [256], [0, 256])
   b_hist = cv2.normalize(b_hist, b_hist, 1, 0, cv2.NORM_L1)
