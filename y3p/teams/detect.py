@@ -12,7 +12,7 @@ FRAMES_TO_SKIP = 36
 
 def main(config, detector):
   """Sample humans from videos and manually classify into team A, team B, and spectators"""
-  classifier_config = config['team_classification']
+  classifier_config = config['teams']
   views = config['views']
   max_samples = classifier_config['samples']
   out_dir = classifier_config['out_directory']
@@ -47,7 +47,7 @@ def main(config, detector):
     if samples >= max_samples:
       break
 
-    for _, capture in enumerate(captures):
+    for capture in captures:
       ret, frame = capture.read()
 
       if not ret:

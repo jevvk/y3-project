@@ -16,5 +16,5 @@ class Camera:
     self.fc = np.array(calibration['fc'])
     self.cc = np.array(calibration['cc'])
 
-    self.matrix = np.array([ self.fc[0], 0 , self.cc[0], 0 , self.fc[1], self.cc[1], 0, 0, 1 ])
+    self.matrix = np.array([ self.fc[0], 0, self.cc[0], 0, self.fc[1], self.cc[1], 0, 0, 1 ])
     self.matrix = self.matrix.reshape(3, 3)

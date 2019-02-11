@@ -3,6 +3,7 @@ import yaml
 import argparse
 
 from y3p.track import main as track_main
+from y3p.field.points_gui import main as field_points_main
 from y3p.teams.detect import main as teams_detect_main
 from y3p.teams.train import main as teams_train_main
 
@@ -29,6 +30,8 @@ def main(args):
 
     if args.mode == 'track':
       track_main(config, detector)
+    elif args.mode == 'field-points':
+      field_points_main(config, detector)
     elif args.mode == 'teams-detect':
       teams_detect_main(config, detector)
     elif args.mode == 'teams-train':
@@ -41,8 +44,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Short sample app')
 
   parser.add_argument('config')
-  parser.add_argument('--model', choices = ['mrcnn', 'none'], default = 'mrcnn')
-  parser.add_argument('--mode', choices = ['teams-detect', 'teams-train', 'track'], default = 'track')
+  parser.add_argument('--model', choices = ['mrcnn', 'none'], default = 'none')
+  parser.add_argument('--mode', choices = ['teams-detect', 'teams-train', 'field-points', 'track'], default = 'track')
 
   args = parser.parse_args()
 

@@ -14,7 +14,7 @@ TRAINING_SAMPLE_PROBABILITY = 0.75
 NORMALIZED_IMAGE_SIZE = 60
 
 def main(config, _):
-  classifier_config = config['team_classification']
+  classifier_config = config['teams']
   out_dir = classifier_config['out_directory']
 
   weights = np.shape([3, 768])
@@ -49,10 +49,18 @@ def main(config, _):
 
   training_features, training_labels, testing_features, testing_labels = prepare_data(features, labels)
   weights, _ = train_all(training_features, training_labels, weights, ITERATIONS, LEARNING_RATE)
-  print('Done training.')
 
   test_accuracy(testing_features, testing_labels, weights)
+
+  print('Done training.')
+  print('Testing whole dataset.')
+
   test_accuracy(features, labels, weights)
+
+  weights_path = os.path.join(PROJECT_DIR, out_dir, 'weights.npy')
+
+  print('Saving weights.')
+  np.save(weights_path, weights)
 
 def prepare_data(features, labels):
   total_labels = len(labels)
@@ -84,7 +92,6 @@ def convert_histogram(hist):
   return [x[0] for x in hist]
 
 def calculate_features(image):
-  # hist = cv2.calcHist([image], [0], np.where(mask, 255, 0).astype(np.uint8), [256], [0, 256])
   # image = cv2.resize(image, (NORMALIZED_IMAGE_SIZE, NORMALIZED_IMAGE_SIZE))
 
   b_hist = cv2.calcHist([image], [0], None, [256], [0, 256])
