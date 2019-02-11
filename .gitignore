@@ -6,6 +6,6 @@ data/**/*.mp4
 data/**/*.mjpeg
 data/**/*.idx
 data/**/*.png
-data/**/*.npy
+data/spiroudome/**/*
 out/
 logs/
