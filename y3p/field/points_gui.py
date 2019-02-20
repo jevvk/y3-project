@@ -1,5 +1,6 @@
 import cv2
 import os
+import sys
 import pickle
 import numpy as np
 
@@ -20,6 +21,11 @@ def main(config, _):
   views = []
   all_field_points = []
 
+  field_config = config['field']
+  max_char = ord(max(field_config['points'].keys()))
+
+  assert max_char < ord('q')
+
   for camera_config in config['views']:
     camera = Camera(camera_config)
 
@@ -37,7 +43,8 @@ def main(config, _):
       if not ret:
         break
 
-      frame = cv2.undistort(frame, camera.matrix, camera.kc)
+      # better not to undistort
+      # frame = cv2.undistort(frame, camera.matrix, camera.kc)
 
       if views[index] is None:
         views[index] = (cv2.split(frame.astype('float')), 1)
@@ -56,7 +63,7 @@ def main(config, _):
 
   print('Showing results.')
   print('To select a corner, press left mouse button on the image.')
-  print('Press a, b, ..., j for each corner visibile. Press r to reset, space to continue.')
+  print('Press a, b, ..., %s for each corner visibile. Press r to reset, space to continue.' % chr(max_char))
 
   cv2.namedWindow(WINDOW_NAME)
   cv2.setMouseCallback(WINDOW_NAME, mouse_event)
@@ -81,10 +88,12 @@ def main(config, _):
 
       if key == 32: # space
         stop = True
+      elif key == ord('q'):
+        sys.exit(0)
       elif key == ord('r'):
         print('Points for this camera have been reset.')
         field_points = {}
-      elif ord('a') <= key <= ord('j'):
+      elif ord('a') <= key <= max_char:
         if point is None:
           print('No point selected.')
           continue
@@ -101,7 +110,7 @@ def main(config, _):
 
   print('Saving points.')
 
-  out_dir = config['field_points']['out_directory']
+  out_dir = config['field']['out_directory']
   file_path = os.path.join(PROJECT_DIR, out_dir, 'points.data')
 
   try:

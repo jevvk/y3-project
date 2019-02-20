@@ -87,7 +87,8 @@ def main(config, detector):
           continue
         elif key == ord('q'):
           print('Exiting.')
-          sys.exit(0)
+          stop = True
+          break
         else:
           print('Key not recognised, assumed as spectator. Skipping.')
           continue
