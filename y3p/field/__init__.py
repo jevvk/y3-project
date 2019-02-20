@@ -91,51 +91,20 @@ class Field:
 
     camera = self._cameras[camera_index]
     # undistort point then convert to homogeneos
-    # point = np.array(camera.cc, dtype=np.float64).reshape((1, 1, 2))
     point = np.array(point, dtype=np.float64).reshape((1, 1, 2))
     point = cv2.undistortPoints(point, camera.matrix, camera.kc)
     point = cv2.convertPointsToHomogeneous(point)
     point = point.reshape((3))
 
-    origin = camera.T
-    # apply the inverse transformation to get the direction vector
-    # something wrong here
-    direction = np.dot(np.linalg.inv(camera.matrix), point)
+    # apply the camera transformations in reverse
+    origin = -np.dot(camera.R.T, camera.T)
     direction = np.dot(camera.R.T, point)
     direction = norm(direction)
-
-    print(point)
-
-    print(direction, dist(direction))
-    print(camera.R[:, 2], dist(camera.R[:, 2]))
 
     # find where line intersects the y plane
     s = np.dot(-1 * Y_NORMAL, origin) / np.dot(Y_NORMAL, direction)
 
-    # P = -camera.T + 525 * np.dot(camera.R.T, [0, 0, 1])
-    P = origin + s * direction
-
-    print(origin, direction, s, P)
-
-    return P
-  
-    # undistort point
-    # create line from camera to point on image
-    # find where hits y = 0
-
-    # Line and plane intersection
-    # T - camera translation
-    # V - vector from camera to projected point
-    # N - plane normal vector
-    # O - point on plane
-    # L - line from camera to projected point
-    # L(x) = T + xV
-
-    # solution condition
-    # N . L(s) = 0
-
-    # solution
-    # s = (-N . T) / (N . V)
+    return origin + s * direction
 
 def norm(v):
   return v / dist(v)
