@@ -1,7 +1,26 @@
-field_points:
-  out_directory: data/spiroudome/field
+field:
+  out_directory: data/spiroudome/data
+  bounds: [0, 0, 2797, 1499]
+  points:
+    a: [0, 0]
+    b: [1175, 0]
+    c: [2350, 0]
+    d: [0, 425]
+    e: [475, 425]
+    f: [1175, 550]
+    g: [1875, 425]
+    h: [2350, 425]
+    i: [0, 825]
+    j: [475, 825]
+    k: [1175, 1325]
+    l: [1875, 825]
+    m: [2350, 825]
+    n: [0, 1250]
+    o: [1175, 1250]
+    p: [2350, 1250]
 teams:
-  out_directory: data/spiroudome/teams
+  out_directory: data/spiroudome/data
+  samples_directory: data/spiroudome/data/team_samples
   samples: 600
 views:
   - name: camera 2

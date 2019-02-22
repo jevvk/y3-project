@@ -45,7 +45,7 @@ class MaskRCNNDetector(Detector):
 
       # might want to skip scores < 0.5
       
-      x1, y1, x2, y2 = boxes[i]
+      y1, x1, y2, x2 = boxes[i]
 
       width = abs(x1 - x2)
       height = abs(y1 - y2)
@@ -54,7 +54,7 @@ class MaskRCNNDetector(Detector):
       mask = masks[x1:x2, y1:y2, i]
       score = scores[i]
 
-      detections.append((x1, y1, height, width, image, mask, score))
+      detections.append((min(x1, x2), min(y1, y2), height, width, image, mask, score))
     
     return detections
 

@@ -13,9 +13,10 @@ LEARNING_RATE = 0.1
 TRAINING_SAMPLE_PROBABILITY = 0.75
 NORMALIZED_IMAGE_SIZE = 60
 
-def main(config, _):
+def main(config, detector, debug):
   classifier_config = config['teams']
   out_dir = classifier_config['out_directory']
+  samples_dir = classifier_config['samples_directory']
 
   weights = np.shape([3, 768])
 
@@ -30,7 +31,7 @@ def main(config, _):
   print('Loading samples.')
 
   for i in range(total_labels):
-    path = os.path.join(PROJECT_DIR, out_dir, 'sample-%d.png' % i)
+    path = os.path.join(PROJECT_DIR, samples_dir, 'sample-%d.png' % i)
     image = cv2.imread(path)
     features[i] = calculate_features(image)
 
@@ -61,6 +62,14 @@ def main(config, _):
 
   print('Saving weights.')
   np.save(weights_path, weights)
+
+def load_weights(config):
+  classifier_config = config['teams']
+  out_dir = classifier_config['out_directory']
+  weights_path = os.path.join(PROJECT_DIR, out_dir, 'weights.npy')
+  weights = np.load(weights_path)
+
+  return weights
 
 def prepare_data(features, labels):
   total_labels = len(labels)
@@ -210,3 +219,7 @@ def classify(features, weights):
 
   return pred
 
+def single_classify(image, weights):
+  features = calculate_features(image)
+
+  return classify(np.array([features]), weights)[0]

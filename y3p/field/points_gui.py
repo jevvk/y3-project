@@ -9,11 +9,12 @@ from y3p.space.camera import Camera
 
 MAX_FRAMES_TO_AVERAGE = 40
 WINDOW_NAME = 'points'
+WINDOW_SCALE = 0.75
 
 original_frame = None
 point = None
 
-def main(config, _):
+def main(config, detector, debug):
   global point, original_frame
 
   captures = []
@@ -79,7 +80,7 @@ def main(config, _):
     field_points = {}
     frame = cv2.merge((b, g, r)).astype('uint8')
     original_frame = frame
-    cv2.imshow(WINDOW_NAME, frame)
+    cv2.imshow(WINDOW_NAME, cv2.resize(frame, (0, 0), fx=WINDOW_SCALE, fy=WINDOW_SCALE))
 
     stop = False
 
@@ -104,7 +105,7 @@ def main(config, _):
         field_points[chr(key)] = point
         point = None
 
-        cv2.imshow(WINDOW_NAME, frame)
+        cv2.imshow(WINDOW_NAME, cv2.resize(frame, (0, 0), fx=WINDOW_SCALE, fy=WINDOW_SCALE))
 
     all_field_points.append(field_points)
 
@@ -127,8 +128,8 @@ def mouse_event(event, x, y, flags, param):
   if event is not cv2.EVENT_FLAG_LBUTTON:
     return
 
-  point = (x, y)
+  point = (int(x / WINDOW_SCALE), int(y / WINDOW_SCALE))
   frame = original_frame.copy()
 
   cv2.circle(frame, point, 3, (0, 0, 255), -1)
-  cv2.imshow(WINDOW_NAME, frame)
+  cv2.imshow(WINDOW_NAME, cv2.resize(frame, (0, 0), fx=WINDOW_SCALE, fy=WINDOW_SCALE))

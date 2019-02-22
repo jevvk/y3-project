@@ -29,13 +29,13 @@ def main(args):
     config = yaml.load(stream)
 
     if args.mode == 'track':
-      track_main(config, detector)
+      track_main(config, detector, args.debug)
     elif args.mode == 'field-points':
-      field_points_main(config, detector)
+      field_points_main(config, detector, args.debug)
     elif args.mode == 'teams-detect':
-      teams_detect_main(config, detector)
+      teams_detect_main(config, detector, args.debug)
     elif args.mode == 'teams-train':
-      teams_train_main(config, detector)
+      teams_train_main(config, detector, args.debug)
     else:
       # this shouldn't happen
       sys.exit(1)
@@ -46,6 +46,8 @@ if __name__ == '__main__':
   parser.add_argument('config')
   parser.add_argument('--model', choices = ['mrcnn', 'none'], default = 'none')
   parser.add_argument('--mode', choices = ['teams-detect', 'teams-train', 'field-points', 'track'], default = 'track')
+  parser.add_argument('--debug', action='store_true')
+  parser.set_defaults(debug=False)
 
   args = parser.parse_args()
 

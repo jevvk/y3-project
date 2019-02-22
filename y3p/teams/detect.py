@@ -10,12 +10,13 @@ from y3p.space.camera import Camera
 
 FRAMES_TO_SKIP = 36
 
-def main(config, detector):
+def main(config, detector, debug):
   """Sample humans from videos and manually classify into team A, team B, and spectators"""
   classifier_config = config['teams']
   views = config['views']
   max_samples = classifier_config['samples']
   out_dir = classifier_config['out_directory']
+  samples_dir = classifier_config['samples_directory']
 
   samples = 0
   cameras = []
@@ -24,6 +25,11 @@ def main(config, detector):
 
   try:
     os.mkdir(os.path.join(PROJECT_DIR, out_dir))
+  except:
+    pass
+
+  try:
+    os.mkdir(os.path.join(PROJECT_DIR, samples_dir))
   except:
     pass
 
@@ -64,7 +70,7 @@ def main(config, detector):
         image = detection[4]
         mask = detection[5]
 
-        img_path = os.path.join(PROJECT_DIR, out_dir, 'sample-%d.png' % samples)
+        img_path = os.path.join(PROJECT_DIR, samples_dir, 'sample-%d.png' % samples)
         mask_path = os.path.join(PROJECT_DIR, out_dir, 'sample-%d.npy' % samples)
 
         cv2.imshow('Detection', image)
