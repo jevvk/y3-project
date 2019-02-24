@@ -50,8 +50,8 @@ class MaskRCNNDetector(Detector):
       width = abs(x1 - x2)
       height = abs(y1 - y2)
 
-      image = frame[x1:x2, y1:y2, :]
-      mask = masks[x1:x2, y1:y2, i]
+      image = frame[y1:y2, x1:x2, :]
+      mask = masks[y1:y2, x1:x2, i]
       score = scores[i]
 
       detections.append((min(x1, x2), min(y1, y2), height, width, image, mask, score))
