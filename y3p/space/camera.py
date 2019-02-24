@@ -4,7 +4,7 @@ class Camera:
   def __init__(self, config):
     self.name = config['name']
     self.file = config['file']
-    self.index = config['index']
+    # self.index = config['index']
     self.width = config['width']
     self.height = config['height']
 
@@ -18,6 +18,6 @@ class Camera:
 
     self.matrix = np.array([ self.fc[0], 0, self.cc[0], 0, self.fc[1], self.cc[1], 0, 0, 1 ])
     self.matrix = self.matrix.reshape(3, 3)
-  
+
   def __str__(self):
     return 'Camera(T=%s, R=%s, kc=%s, fc=%s, cc=%s)' % (str(self.T), str(self.R), str(self.kc), str(self.fc), str(self.cc))

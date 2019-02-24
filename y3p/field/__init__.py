@@ -164,7 +164,7 @@ class Field:
     mean = np.mean(distances)
     std = np.std(distances)
 
-    print('Field: (samples=%d,\thomography=%r,\treprojection field points) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
+    print('Field: (samples=%d, homography=%r, reprojection field points) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
 
     distances = []
 
@@ -191,10 +191,15 @@ class Field:
     mean = np.mean(distances)
     std = np.std(distances)
 
-    print('Field: (samples=%d,\thomography=%r,\treprojection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
+    print('Field: (samples=%d, homography=%r, reprojection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
 
   def camera_count(self):
     return len(self._cameras)
+  
+  def get_camera(self, camera_index):
+    assert 0 <= camera_index < len(self._cameras)
+
+    return self._cameras[camera_index]
 
   def get_projection(self, camera_index: int, point: tuple):
     assert 0 <= camera_index < len(self._cameras)
