@@ -23,8 +23,8 @@ teams:
   samples: 600
 views:
   - name: camera 1
-    file: data/apidis/camera1-900+02.mp4
-    index: data/apidis/camera1-900+02.mp4.index
+    file: data/apidis/camera1-900+02.mjpeg
+    index: data/apidis/camera1-900+02.mjpeg.index
     width: 1600
     height: 1200
     calibration:
@@ -34,8 +34,8 @@ views:
       fc: [ 1.89792348759109E+03, 1.89792348759109E+03 ]
       cc: [ 8.92002691087055E+02, 5.42383560486006E+02 ]
   - name: camera 2
-    file: data/apidis/camera2-900+02.mp4
-    index: data/apidis/camera2-900+02.mp4.index
+    file: data/apidis/camera2-900+02.mjpeg
+    index: data/apidis/camera2-900+02.mjpeg.index
     width: 1600
     height: 1200
     calibration:
@@ -45,8 +45,8 @@ views:
       fc: [ 1.63821444662461E+03, 1.63821444662461E+03 ]
       cc: [ 7.99500000000000E+02, 5.99500000000000E+02 ]
   - name: camera 6
-    file: data/apidis/camera6-900+02.mp4
-    index: data/apidis/camera6-900+02.mp4.index
+    file: data/apidis/camera6-900+02.mjpeg
+    index: data/apidis/camera6-900+02.mjpeg.index
     width: 1600
     height: 1200
     calibration:
