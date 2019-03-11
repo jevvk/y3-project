@@ -9,21 +9,23 @@ from y3p.space.camera import Camera
 
 MAX_FRAMES_TO_AVERAGE = 40
 WINDOW_NAME = 'points'
-WINDOW_SCALE = 0.75
+WINDOW_SCALE = 0.67
 
 original_frame = None
 point = None
 
-def main(config, detector, debug):
+def main(config, debug):
   global point, original_frame
+
+  print('Stage 1: select field points for each camera.')
+  print('Loading cameras config.')
 
   captures = []
   cameras = []
   views = []
   all_field_points = []
 
-  field_config = config['field']
-  max_char = ord(max(field_config['points'].keys()))
+  max_char = ord(max(config['field'].keys()))
 
   assert max_char < ord('q')
 
@@ -34,8 +36,7 @@ def main(config, detector, debug):
     captures.append(cv2.VideoCapture(os.path.join(PROJECT_DIR, camera.file)))
     views.append(None)
 
-  print('Loaded cameras config.')
-  print('Calculating average of %d frames for each camera...' % MAX_FRAMES_TO_AVERAGE)
+  print('Calculating average of %d frames for each camera.' % MAX_FRAMES_TO_AVERAGE)
 
   for index, capture in enumerate(captures):
     for _ in range(MAX_FRAMES_TO_AVERAGE):
@@ -43,9 +44,6 @@ def main(config, detector, debug):
 
       if not ret:
         break
-
-      # better not to undistort
-      # frame = cv2.undistort(frame, camera.matrix, camera.kc)
 
       if views[index] is None:
         views[index] = (cv2.split(frame.astype('float')), 1)
@@ -62,7 +60,6 @@ def main(config, detector, debug):
   for capture in captures:
     capture.release()
 
-  print('Showing results.')
   print('To select a corner, press left mouse button on the image.')
   print('Press a, b, ..., %s for each corner visibile. Press r to reset, space to continue.' % chr(max_char))
 
@@ -111,7 +108,7 @@ def main(config, detector, debug):
 
   print('Saving points.')
 
-  out_dir = config['field']['out_directory']
+  out_dir = config['out']
   file_path = os.path.join(PROJECT_DIR, out_dir, 'points.data')
 
   try:

@@ -7,18 +7,19 @@ from functools import reduce
 
 from y3p import PROJECT_DIR
 
-ITERATIONS = 5000
+ITERATIONS = 20000
 ITERATIONS_PRINT_PERIOD = 1000
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.05
 TRAINING_SAMPLE_PROBABILITY = 0.75
 NORMALIZED_IMAGE_SIZE = 60
+N_FEATURES = 768
 
-def main(config, detector, debug):
+def main(config, debug):
   classifier_config = config['teams']
-  out_dir = classifier_config['out_directory']
+  out_dir = config['out']
   samples_dir = classifier_config['samples_directory']
 
-  weights = np.shape([3, 768])
+  weights = np.shape([3, N_FEATURES])
 
   print('Loading labels.')
 
@@ -26,7 +27,7 @@ def main(config, detector, debug):
   labels = np.load(labels_path)
   total_labels = len(labels)
 
-  features = np.ndarray((total_labels, 768))
+  features = np.ndarray((total_labels, N_FEATURES))
 
   print('Loading samples.')
 
@@ -35,7 +36,7 @@ def main(config, detector, debug):
     image = cv2.imread(path)
     features[i] = calculate_features(image)
 
-  weights = np.random.rand(3, 768)
+  weights = np.random.rand(3, N_FEATURES)
   training_features, training_labels, testing_features, testing_labels = prepare_data(features, labels)
 
   test_accuracy(testing_features, testing_labels, weights)
@@ -65,7 +66,7 @@ def main(config, detector, debug):
 
 def load_weights(config):
   classifier_config = config['teams']
-  out_dir = classifier_config['out_directory']
+  out_dir = config['out']
   weights_path = os.path.join(PROJECT_DIR, out_dir, 'weights.npy')
   weights = np.load(weights_path)
 
@@ -101,17 +102,18 @@ def convert_histogram(hist):
   return [x[0] for x in hist]
 
 def calculate_features(image):
-  # image = cv2.resize(image, (NORMALIZED_IMAGE_SIZE, NORMALIZED_IMAGE_SIZE))
+  image = cv2.resize(image, (NORMALIZED_IMAGE_SIZE, NORMALIZED_IMAGE_SIZE))
+  hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
 
-  b_hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+  b_hist = cv2.calcHist([hsv], [0], None, [256], [0, 256])
   b_hist = cv2.normalize(b_hist, b_hist, 1, 0, cv2.NORM_L1)
   b_hist = convert_histogram(b_hist)
 
-  r_hist = cv2.calcHist([image], [1], None, [256], [0, 256])
+  r_hist = cv2.calcHist([hsv], [1], None, [256], [0, 256])
   r_hist = cv2.normalize(r_hist, r_hist, 1, 0, cv2.NORM_L1)
   r_hist = convert_histogram(r_hist)
 
-  g_hist = cv2.calcHist([image], [2], None, [256], [0, 256])
+  g_hist = cv2.calcHist([hsv], [2], None, [256], [0, 256])
   g_hist = cv2.normalize(g_hist, g_hist, 1, 0, cv2.NORM_L1)
   g_hist = convert_histogram(g_hist)
 
@@ -123,7 +125,7 @@ def sigmoid(x):
 
 def predict(features, weights):
   """Single class predict
-  
+
   features - array(N, F)
   weights - array(F, 1)
 

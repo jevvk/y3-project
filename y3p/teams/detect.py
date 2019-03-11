@@ -4,19 +4,24 @@ import sys
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+from random import random
 
 from y3p import PROJECT_DIR
+
+from y3p.field import Field
+from y3p.player import Player
 from y3p.space.camera import Camera
 
-FRAMES_TO_SKIP = 36
+FRAMES_TO_SKIP = 6
+SPECTATOR_PROB = 0.25
 
 def main(config, detector, debug):
   """Sample humans from videos and manually classify into team A, team B, and spectators"""
   classifier_config = config['teams']
   views = config['views']
-  max_samples = classifier_config['samples']
-  out_dir = classifier_config['out_directory']
+  out_dir = config['out']
   samples_dir = classifier_config['samples_directory']
+  max_samples = classifier_config['samples']
 
   samples = 0
   cameras = []
@@ -41,6 +46,7 @@ def main(config, detector, debug):
     captures.append(cv2.VideoCapture(os.path.join(PROJECT_DIR, camera.file)))
 
   stop = False
+  field = Field(config, debug)
 
   print('Press z for team A, x for team B, n for spectator, s to skip, q to exit...')
 
@@ -53,7 +59,8 @@ def main(config, detector, debug):
     if samples >= max_samples:
       break
 
-    for capture in captures:
+    for i in range(len(captures)):
+      capture = captures[i]
       ret, frame = capture.read()
 
       if not ret:
@@ -67,11 +74,16 @@ def main(config, detector, debug):
       detections = detector.forward(frame)
 
       for detection in detections:
+        player = Player(detection, i)
+
+        if not field.is_inside(player.get_position(field)[0]) and random() > SPECTATOR_PROB:
+          continue
+
         image = detection[4]
         mask = detection[5]
 
         img_path = os.path.join(PROJECT_DIR, samples_dir, 'sample-%d.png' % samples)
-        mask_path = os.path.join(PROJECT_DIR, out_dir, 'sample-%d.npy' % samples)
+        mask_path = os.path.join(PROJECT_DIR, samples_dir, 'sample-%d.npy' % samples)
 
         cv2.imshow('Detection', image)
 

@@ -10,6 +10,7 @@ from y3p.space.camera_extended import CameraExtended
 
 Y_NORMAL = np.array([0, 1, 0])
 ACCURACY_TEST_SAMPLES = 500
+FIELD_OUT_THRESHOLD = 0.1
 
 class Field:
   _cameras = []
@@ -19,37 +20,38 @@ class Field:
 
   def __init__(self, config: dict, debug: bool):
     self._load_cameras(config['views'])
-    self._load_field(config['field'])
-    self._load_camera_points(config['field'])
-    self._position_cameras()
+    self._load_field(config)
+    self._load_camera_points(config)
+    self._position_cameras(debug)
     self._calculate_field_size()
     self._calculate_homography()
     self._test_accuracy(debug)
 
   def _load_cameras(self, cameras: list):
-    print('Field: loading cameras.')
+    print('Loading cameras.')
 
     for camera_config in cameras:
       self._cameras.append(CameraExtended(camera_config))
 
-  def _load_field(self, field_config: dict):
-    print('Field: loading field points.')
+  def _load_field(self, config: dict):
+    print('Loading field points.')
 
-    self._points = field_config['points']
+    self._points = config['field']
 
-  def _load_camera_points(self, field_config: dict):
-    print('Field: loading camera points.')
+  def _load_camera_points(self, config: dict):
+    print('Loading camera points.')
 
-    file_path = os.path.join(PROJECT_DIR, field_config['out_directory'], 'points.data')
+    file_path = os.path.join(PROJECT_DIR, config['out'], 'points.data')
 
     with open(file_path, 'rb') as stream:
       self._camera_points = pickle.load(stream)
 
-  def _position_cameras(self):
-    print('Field: positioning cameras.')
+  def _position_cameras(self, debug: bool):
+    print('Positioning cameras.')
 
     for camera, camera_points in zip(self._cameras, self._camera_points):
-      print('Field: calculating for %s.' % camera.name)
+      if debug:
+        print('Calculating for %s.' % camera.name)
 
       object_points = []
       image_points = []
@@ -61,7 +63,8 @@ class Field:
         object_points.append(point_2d_3d(self._points[key]))
         image_points.append(camera_points[key])
 
-      print('Field: got %d points.' % len(object_points))
+      if debug:
+        print('Got %d points.' % len(object_points))
 
       object_points = np.array(object_points, dtype=np.float64)
       image_points = np.array(image_points, dtype=np.float64)
@@ -75,7 +78,8 @@ class Field:
       camera.R = cv2.Rodrigues(rvec)[0]
       camera.T = tvec.reshape((-1))
 
-      print('Field: calculated R and t for %s.' % camera.name)
+      if debug:
+        print('Calculated R and t for %s.' % camera.name)
 
   def _calculate_field_size(self):
     self.size = [0, 0]
@@ -104,7 +108,7 @@ class Field:
 
       camera.H = H
       camera.mask = mask
-  
+
   def _test_accuracy(self, debug: bool):
     for i in range(len(self._cameras)):
       camera = self._cameras[i]
@@ -123,11 +127,12 @@ class Field:
 
         reproj_points.append((x, y))
 
-      self._test_projection_accuracy(i, proj_points, debug)
-      self._test_reprojection_accuracy(i, reproj_points, False, debug)
-      self._test_reprojection_accuracy(i, reproj_points, True, debug)
+      if debug:
+        self._test_projection_accuracy(i, proj_points)
+        self._test_reprojection_accuracy(i, reproj_points, False)
+        self._test_reprojection_accuracy(i, reproj_points, True)
 
-  def _test_projection_accuracy(self, i, points, debug: bool):
+  def _test_projection_accuracy(self, i, points):
     camera = self._cameras[i]
     distances = []
 
@@ -146,9 +151,9 @@ class Field:
     mean = np.mean(distances)
     std = np.std(distances)
 
-    print('Field: (projection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (self._cameras[i].name, mean, std))
+    print('(projection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (self._cameras[i].name, mean, std))
 
-  def _test_reprojection_accuracy(self, i, points, use_homography: bool, debug: bool):
+  def _test_reprojection_accuracy(self, i, points, use_homography: bool):
     camera = self._cameras[i]
     distances = []
 
@@ -158,13 +163,10 @@ class Field:
       diff = position - np.array(self._points[key])
       distances.append(100 * dist(diff / self.size))
 
-      if debug:
-        print(camera.name, point, self._points[key], self.get_position(i, point, use_homography=use_homography), self.get_projection(i, (self._points[key][0], 0, self._points[key][1])), diff)
-
     mean = np.mean(distances)
     std = np.std(distances)
 
-    print('Field: (samples=%d, homography=%r, reprojection field points) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
+    print('(samples=%d, homography=%r, reprojection field points) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
 
     distances = []
 
@@ -191,11 +193,11 @@ class Field:
     mean = np.mean(distances)
     std = np.std(distances)
 
-    print('Field: (samples=%d, homography=%r, reprojection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
+    print('(samples=%d, homography=%r, reprojection test) %s has %.3f%% mean and %.3f%% standard deviation error.' % (len(distances), use_homography, self._cameras[i].name, mean, std))
 
   def camera_count(self):
     return len(self._cameras)
-  
+
   def get_camera(self, camera_index):
     assert 0 <= camera_index < len(self._cameras)
 
@@ -245,6 +247,21 @@ class Field:
       position = position.reshape((2))
 
     return position
+
+  def is_inside(self, point):
+    x, y = point
+    x /= self.size[0]
+    y /= self.size[1]
+
+    # check the x coordinate is inside field
+    if abs(x - 1/2) - 1/2 > FIELD_OUT_THRESHOLD:
+      return False
+
+    # check the y coordinate is inside field
+    if abs(y - 1/2) - 1/2 > FIELD_OUT_THRESHOLD:
+      return False
+    
+    return True
 
 def point_2d_3d(point):
   return np.array([point[0], 0, point[1]])

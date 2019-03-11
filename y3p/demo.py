@@ -7,9 +7,8 @@ from y3p.space.camera import Camera
 
 from y3p.field import Field
 from y3p.player import Player
-from y3p.tracker import Tracker
 from y3p.teams.train import load_weights, single_classify
-from y3p.player.feature import calculate_features, distance
+from y3p.player.feature import calculate_descriptor, distance
 
 FIELD_SCALE = 0.67
 FIELD_OUT_THRESHOLD = 0.1
@@ -59,7 +58,7 @@ def main(config, detector, debug):
     cv2.imshow('frame2', frame2)
     cv2.imshow('positions', cv2.resize(court_image, (0, 0), fx=0.25, fy=0.25))
 
-    if cv2.waitKey(33) & 0xFF == ord('q'):
+    if cv2.waitKey(42) & 0xFF == ord('q'):
       break
 
   cv2.destroyAllWindows()
@@ -81,19 +80,12 @@ def draw_detections(camera: int, frame, court_image, field, detections, color, d
       cv2.rectangle(frame, (player.x, player.y), (player.x + player.width, player.y + player.height), (0, 0, 0), 2)
       continue
 
-    court_x, court_y = position
-
-    # skip people too far away from the court
-    if abs(court_x / field.size[0] - 0.5) - 0.5 > FIELD_OUT_THRESHOLD:
-      cv2.rectangle(frame, (player.x, player.y), (player.x + player.width, player.y + player.height), (0, 0, 0), 2)
-      continue
-
-    if abs(court_y / field.size[1] - 0.5) - 0.5 > FIELD_OUT_THRESHOLD:
-      cv2.rectangle(frame, (player.x, player.y), (player.x + player.width, player.y + player.height), (0, 0, 0), 2)
+    if not field.is_inside(position):
       continue
 
     overlay = court_image.copy()
 
+    court_x, court_y = position
     court_x = int(court_x * FIELD_SCALE + field.size[0] * (1 - FIELD_SCALE) / 2)
     court_y = int(court_y * FIELD_SCALE + field.size[1] * (1 - FIELD_SCALE) / 2)
 

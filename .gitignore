@@ -8,6 +8,7 @@ data/**/*.idx
 data/**/*.png
 data/apidis/**/*
 data/apidis_sync/**/*
+data/demo/**/*
 data/spiroudome/**/*
 out/
 logs/

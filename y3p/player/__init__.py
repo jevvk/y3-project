@@ -1,16 +1,19 @@
 import math
 import numpy as np
 
+from y3p.field import Field
+
 class Player:
-  def __init__(self, detection, camera):
-    self.x = detection[0]
-    self.y = detection[1]
-    self.height = detection[2]
-    self.width = detection[3]
+  def __init__(self, detection, camera: int):
+    self.x = int(detection[0])
+    self.y = int(detection[1])
+    self.height = int(detection[2])
+    self.width = int(detection[3])
     self.image = detection[4]
     # self.mask = detection[5]
     self.mask = None
     self.camera = camera
+    self.team = -1
 
     self._calculate_feet_position()
 
@@ -19,17 +22,18 @@ class Player:
     self.feet_x = int(self.x + self.width / 2)
     self.feet_y = int(self.y + self.height)
 
-  def get_position(self, field):
+  def get_position(self, field: Field):
     feet = [self.feet_x, self.feet_y]
     position = field.get_position(self.camera, feet, use_homography=False)
     camera = field.get_camera(self.camera)
     T = np.dot(camera.R.T, -camera.T)
-    diff = position + np.array([T[0], T[2]])
-    diff /= field.size
-    confidence = 1 + np.sum(diff * diff)
-    # confidence = 1 / dist(diff)
+    diff = np.array([position[0], 0, position[1]]) + T
+    diff = np.dot(camera.R.T, diff)
+    diff = np.array([diff[0], diff[1]]) / field.size
+    confidence = 1 / dist(diff * diff)
+    # print(confidence)
 
-    return position, confidence
+    return position, confidence * 5
 
 def norm(v):
   return v / dist(v)

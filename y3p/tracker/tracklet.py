@@ -1,13 +1,9 @@
-import pykalman
+from random import randint
 
-tcov = None
-ocov = None
-
-"""
-Contains the following information:
-  1. Position relative to court represented as an ellipse
-  2. Image features used for identification
-"""
 class Tracklet:
-  def __init__(self):
-    self._filter = pykalman.KalmanFilter(transition_covariance=tcov, observation_covariance=ocov)
+  def __init__(self, start_time: int):
+    self.samples = []
+    self.filtered_samples = []
+    self.start_time = start_time
+    self.last_time = start_time
+    self.color = [randint(0, 255), randint(0, 255), randint(0, 255)]

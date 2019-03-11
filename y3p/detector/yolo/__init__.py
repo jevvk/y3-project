@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 
-class YoloDetector:
+from y3p.detector import Detector
+
+class YoloDetector(Detector):
   def __init__(self, config):
     self._conf_threshold = config.get('detector').get('conf_threshold')
     self._nms_threshold = config.get('detector').get('nms_threshold')
