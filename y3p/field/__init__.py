@@ -89,9 +89,7 @@ class Field:
       self.size[1] = max(self.size[1], point[1])
 
   def _calculate_homography(self):
-    for i in range(len(self._cameras)):
-      camera = self._cameras[i]
-
+    for i, camera in enumerate(self._cameras):
       positions = []
       ground_truth = []
 

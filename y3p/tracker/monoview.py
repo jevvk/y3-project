@@ -16,7 +16,7 @@ from y3p.player import Player
 from y3p.player.feature import distance as descriptor_distance
 
 INF_DISTANCE = 999999
-DISTANCE_THRESHOLD = 500
+DISTANCE_THRESHOLD = 50
 TRACKLET_MAX_LIFETIME = 4
 FILTER_HISTORY_SIZE = 4
 FIELD_SCALE = 0.67
@@ -140,19 +140,18 @@ class MonoViewTracker:
     center_dist = sample_distance(sample, tracklet_sample)
     sample_dist = 1
 
-    lam = 0.8
-    t = 5
+    lam = 0.9
+    t = 3
     fac = lam
 
-    t_samples = reversed(tracklet.samples[:t])
+    t_samples = tracklet.samples[:1] + list(reversed(tracklet.samples[:t]))
 
     for t_sample in t_samples:
       sample_dist += fac * descriptor_distance(t_sample.descriptor, sample.descriptor)
       fac *= lam
 
-    center_dist *= center_dist
-    sample_dist = np.log(sample_dist)
-    dist = sample_dist * center_dist
+    sample_dist = 1 + np.log(sample_dist)
+    dist = center_dist * sample_dist
 
     return dist
 
@@ -236,7 +235,7 @@ class MonoViewTracker:
       cv2.circle(overlay, (court_x, court_y), 15, tracklet.color, thickness=-1)
       cv2.circle(overlay, (court_x, court_y), int(15 * confidence), tracklet.color, thickness=-1)
       cv2.addWeighted(overlay, 0.25, frame, 1 - 0.25, 0, frame)
-  
+
 def main(config: dict, debug: bool):
   cameras = []
   out_dir = config['out']
@@ -246,12 +245,16 @@ def main(config: dict, debug: bool):
 
   stop = False
   interval = 42
+  field = None
 
-  # cameras = cameras[2:]
+  if debug:
+    field = Field(config, debug)
 
   for i, camera in enumerate(cameras):
     if stop:
       break
+
+    print('Loading %s player samples.' % camera.name)
 
     frames = None
     file_path = os.path.join(PROJECT_DIR, out_dir, camera.name + '.detect.data')
@@ -259,9 +262,10 @@ def main(config: dict, debug: bool):
     with open(file_path, 'rb') as stream:
       frames = pickle.load(stream)
 
+    print('Running tracker on %s.' % camera.name)
+
     capture = None
     tracker = MonoViewTracker(camera)
-    field = Field(config, debug)
 
     if debug:
       capture = cv2.VideoCapture(os.path.join(PROJECT_DIR, camera.file))
@@ -302,6 +306,8 @@ def main(config: dict, debug: bool):
 
     with open(file_path, 'wb') as stream:
       pickle.dump(players, stream, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print('Finished %s.' % camera.name)
 
     if debug:
       cv2.destroyAllWindows()
