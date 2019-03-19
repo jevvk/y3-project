@@ -4,6 +4,7 @@ import argparse
 
 from y3p.tracker.detector import main as detect_main
 from y3p.tracker.monoview import main as monoview_main
+from y3p.tracker.multiview import main as multiview_main
 from y3p.field.points_gui import main as field_points_main
 from y3p.teams.detect import main as teams_detect_main
 from y3p.teams.train import main as teams_train_main
@@ -48,8 +49,7 @@ def main(args):
     elif args.mode == 'stage3':
       monoview_main(config, args.debug)
     elif args.mode == 'stage4':
-      print('Not implemented.')
-      sys.exit(0)
+      multiview_main(config, args.debug)
     elif args.mode == 'demo':
       demo_main(config, detector, args.debug)
     else:

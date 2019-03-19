@@ -127,25 +127,21 @@ class MultiViewTracker:
 
   def _flatten_positions(self, positions, tracklets):
     expanded = list(map(lambda p: [p], positions[0]))
-    end_time = tracklets[0].end_time
+    start_time = tracklets[0].start_time
 
     for pos, tracklet in zip(positions[1:], tracklets[1:]):
-      count = tracklet.start_time - end_time
+      if len(expanded) < tracklet.start_time - start_time:
+        raise 'Data invalid'
 
-      if count > 0:
-        for i in range(count):
-          expanded[tracklet.start_time + i].append(pos[i])
-      else:
-        for i in range(count):
-          expanded.append([])
+      for i, position in enumerate(pos):
+        index = tracklet.start_time + i - start_time
 
-      for i in range(max(0, count), len(pos)):
-        expanded[tracklet.start_time + i].append(pos[i])
+        if index < len(expanded):
+          expanded[index].append(position)
+        else:
+          expanded.append([position])
 
-      end_time = max(end_time, tracklet.end_time)
-
-    # might need changing because of empty arrays
-    flattened = list(map(np.average, expanded))
+    flattened = list(map(lambda x: np.average(x, axis=0), expanded))
 
     return flattened
 
@@ -235,7 +231,7 @@ def main(config: dict, debug: bool):
       has_more = True
 
       to_add = list(filter(lambda t: t.start_time == current_time, camera_tracklets))
-      tracklets[i] = list(filter(lambda t: t.start_time == current_time, camera_tracklets))
+      tracklets[i] = list(filter(lambda t: t.start_time != current_time, camera_tracklets))
 
       new_tracklets.append(to_add)
 
@@ -244,6 +240,8 @@ def main(config: dict, debug: bool):
 
     tracker.forward(new_tracklets)
     current_time += 1
+
+  print('Saving results.')
 
   players = tracker.get_tracks()
   file_path = os.path.join(PROJECT_DIR, out_dir, 'tracks.data')
