@@ -74,7 +74,7 @@ def draw_detections(camera: int, frame, court_image, field, detections, color, d
 
   for detection in detections:
     player = Player(detection, camera)
-    position, confidence = player.get_position(field)
+    position, confidence = player.get_position(field, normalise=False)
 
     if position is None:
       cv2.rectangle(frame, (player.x, player.y), (player.x + player.width, player.y + player.height), (0, 0, 0), 2)

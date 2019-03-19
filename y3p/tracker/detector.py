@@ -60,7 +60,7 @@ class PlayerDetector:
 
     for detection in detections:
       player = Player(detection, self._camera)
-      position, _ = player.get_position(self._field)
+      position, _ = player.get_position(self._field, normalise=False)
 
       # check if the detection is on the ground
       if position is None:
@@ -94,7 +94,7 @@ class PlayerDetector:
     cv2.rectangle(court_image, top_left, bottom_right, (255, 255, 255), 1)
 
     for player in players:
-      position, confidence = player.get_position(self._field)
+      position, confidence = player.get_position(self._field, normalise=False)
       overlay = court_image.copy()
       court_x, court_y = position
       court_x = int(width * (court_x / field_width * FIELD_SCALE + (1 - FIELD_SCALE) / 2))

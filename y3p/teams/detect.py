@@ -76,7 +76,7 @@ def main(config, detector, debug):
       for detection in detections:
         player = Player(detection, i)
 
-        if not field.is_inside(player.get_position(field)[0]) and random() > SPECTATOR_PROB:
+        if not field.is_inside(player.get_position(field, normalise=False)[0]) and random() > SPECTATOR_PROB:
           continue
 
         image = detection[4]

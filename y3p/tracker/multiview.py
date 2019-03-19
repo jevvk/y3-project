@@ -2,6 +2,7 @@ import cv2
 import os
 import pickle
 import numpy as np
+from random import randint
 
 from scipy.optimize import linear_sum_assignment
 
@@ -15,7 +16,8 @@ from y3p.player import Player
 from y3p.player.feature import distance as descriptor_distance
 
 INF_DISTANCE = 999999
-DISTANCE_THRESHOLD = 50
+DISTANCE_THRESHOLD = 1.5
+FIELD_SCALE = 0.67
 
 STATE_TRANSITION = np.array([
   [1.0, 0.0, 0.0, 0.0],
@@ -152,7 +154,7 @@ class MultiViewTracker:
     cost = np.ones((n, n)) * INF_DISTANCE
 
     for i in range(n):
-      cost[i, i] = DISTANCE_THRESHOLD
+      cost[i, i] = DISTANCE_THRESHOLD / 100
 
     return cost
 
@@ -182,13 +184,64 @@ class MultiViewTracker:
 
       delta_dist += np.sqrt(x_diff ** 2 + y_diff ** 2)
 
-    # dist = initial_dist + np.sqrt(delta_dist)
-    dist = initial_dist + delta_dist
+    dist = initial_dist + np.sqrt(delta_dist)
+    print(dist, initial_dist, delta_dist)
+    # dist = initial_dist + delta_dist
 
     return dist
 
   def get_tracks(self):
     return self._tracks
+
+  def _create_court(self):
+    court_image = np.zeros((self._field.size[1], self._field.size[0], 3), dtype=np.uint8)
+    cv2.rectangle(court_image, (int(self._field.size[0] * (0.5 - FIELD_SCALE / 2)), int(self._field.size[1] * (0.5 - FIELD_SCALE / 2))), (int(self._field.size[0] * (0.5 + FIELD_SCALE / 2)), int(self._field.size[1] * (0.5 + FIELD_SCALE / 2))), (255, 255, 255), 5)
+
+    return court_image
+
+  def _draw_position(self, frame, x, y, color):
+    overlay = frame.copy()
+
+    x = int(x * self._field.size[0] * FIELD_SCALE + self._field.size[0] * (1 - FIELD_SCALE) / 2)
+    y = int(y * self._field.size[1] * FIELD_SCALE + self._field.size[1] * (1 - FIELD_SCALE) / 2)
+
+    cv2.circle(frame, (x, y), 15, color, thickness=-1)
+    cv2.circle(overlay, (x, y), 15, color, thickness=-1)
+    cv2.circle(overlay, (x, y), 35, color, thickness=-1)
+    cv2.addWeighted(overlay, 0.25, frame, 1 - 0.25, 0, frame)
+
+  def draw_courts(self, camera_colors):
+    mono = self._create_court()
+    multi = self._create_court()
+
+    active_tracklets = []
+
+    for track in self._active_tracks:
+      assert isinstance(track, Track)
+
+      x, y = track.positions[self._time - track.start_time]
+
+      for tracklet in track.tracklets:
+        assert isinstance(tracklet, Tracklet)
+
+        start = tracklet.start_time
+        end = start + len(tracklet.filtered_samples) # last_time is actually for the last detection
+
+        if start <= self._time < end:
+          active_tracklets.append(tracklet)
+
+      self._draw_position(multi, x, y, track.color)
+
+    for tracklet in active_tracklets:
+      sample = tracklet.filtered_samples[self._time - tracklet.start_time]
+      player = Player([sample.x, sample.y, sample.height, sample.width, None, None], tracklet.camera)
+      position, _ = player.get_position(self._field)
+      x, y = position
+
+      self._draw_position(mono, x, y, camera_colors[tracklet.camera])
+
+    cv2.imshow('mono view tracked', cv2.resize(mono, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
+    cv2.imshow('multi view tracked', cv2.resize(multi, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
 
 def main(config: dict, debug: bool):
   cameras = []
@@ -203,6 +256,7 @@ def main(config: dict, debug: bool):
   tracker = MultiViewTracker(field, len(cameras))
   tracklets = []
   current_time = 0
+  camera_colors = [[randint(0, 255), randint(0, 255), randint(0, 255)] for _ in range(len(cameras))]
 
   print('Loading tracklets.')
 
@@ -241,6 +295,16 @@ def main(config: dict, debug: bool):
     tracker.forward(new_tracklets)
     current_time += 1
 
+    if debug:
+      tracker.draw_courts(camera_colors)
+      key = cv2.waitKey(interval) & 0xFF
+
+      if key == 32: # space
+        interval = 42 if interval == 0 else 0
+      if key == ord('q'):
+        stop = True
+        break
+
   print('Saving results.')
 
   players = tracker.get_tracks()
@@ -251,4 +315,3 @@ def main(config: dict, debug: bool):
 
   if debug:
     cv2.destroyAllWindows()
-    # capture.release()

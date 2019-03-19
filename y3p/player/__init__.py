@@ -22,18 +22,20 @@ class Player:
     self.feet_x = int(self.x + self.width / 2)
     self.feet_y = int(self.y + self.height)
 
-  def get_position(self, field: Field):
+  def get_position(self, field: Field, normalise=True):
     feet = [self.feet_x, self.feet_y]
-    position = field.get_position(self.camera, feet, use_homography=False)
     camera = field.get_camera(self.camera)
+
+    position = field.get_position(self.camera, feet, use_homography=False)
+    if normalise: position /= field.size
+
     T = np.dot(camera.R.T, -camera.T)
     diff = np.array([position[0], 0, position[1]]) + T
     diff = np.dot(camera.R.T, diff)
     diff = np.array([diff[0], diff[1]]) / field.size
-    confidence = 1 / dist(diff * diff)
-    # print(confidence)
+    confidence = 5 / dist(diff * diff)
 
-    return position, confidence * 5
+    return position, confidence
 
 def norm(v):
   return v / dist(v)

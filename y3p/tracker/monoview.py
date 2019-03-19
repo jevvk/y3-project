@@ -48,8 +48,9 @@ STATE_COVAR = np.array([15.0, 15.0, 5.0, 5.0, 2.5, 2.5])
 MEASUREMENT_COVAR = np.eye(4) * 0.0094
 
 class MonoViewTracker:
-  def __init__(self, camera: Camera):
+  def __init__(self, camera: Camera, camera_index: int):
     self._camera = camera
+    self._camera_index = camera_index
     self._tracklets = []
     self._active_tracklets = []
     self._time = 0
@@ -59,7 +60,7 @@ class MonoViewTracker:
     for sample in samples:
       assert isinstance(sample, Sample)
 
-      tracklet = Tracklet(self._time)
+      tracklet = Tracklet(self._time, self._camera_index)
 
       tracklet.samples.append(sample)
       tracklet.filtered_samples.append(sample)
@@ -220,7 +221,7 @@ class MonoViewTracker:
       sample = tracklet.filtered_samples[-1]
       player = Player([sample.x, sample.y, sample.height, sample.width, None, None], camera)
 
-      position, confidence = player.get_position(field)
+      position, confidence = player.get_position(field, normalise=False)
 
       if position is None or not field.is_inside(position):
         continue
@@ -265,7 +266,7 @@ def main(config: dict, debug: bool):
     print('Running tracker on %s.' % camera.name)
 
     capture = None
-    tracker = MonoViewTracker(camera)
+    tracker = MonoViewTracker(camera, i)
 
     if debug:
       capture = cv2.VideoCapture(os.path.join(PROJECT_DIR, camera.file))
