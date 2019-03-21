@@ -6,6 +6,8 @@ from random import randint
 
 from scipy.optimize import linear_sum_assignment
 
+from pykalman import KalmanFilter
+
 from y3p import PROJECT_DIR
 from y3p.field import Field
 from y3p.space.camera import Camera
@@ -16,25 +18,29 @@ from y3p.player import Player
 from y3p.player.feature import distance as descriptor_distance
 
 INF_DISTANCE = 999999
-DISTANCE_THRESHOLD = 25.0
+DISTANCE_THRESHOLD = 50.0
 FIELD_SCALE = 0.67
 
 STATE_TRANSITION = np.array([
-  [1.0, 0.0, 0.0, 0.0],
-  [0.0, 1.0, 0.0, 0.0],
+  [1.0, 0.0, 1.0, 0.0],
+  [0.0, 1.0, 0.0, 1.0],
   [0.0, 0.0, 1.0, 0.0],
   [0.0, 0.0, 0.0, 1.0]
 ])
 
 MEASUREMENT_FN = np.array([
   [1.0, 0.0, 0.0, 0.0],
-  [0.0, 1.0, 0.0, 0.0],
-  [0.0, 0.0, 1.0, 0.0],
-  [0.0, 0.0, 0.0, 1.0]
+  [0.0, 1.0, 0.0, 0.0]
 ])
 
-STATE_COVAR = np.array([15.0, 15.0, 5.0, 5.0])
-MEASUREMENT_COVAR = np.eye(4) * 0.0094
+STATE_COVAR = np.array([
+  [15.0, 0.0,  0.0, 0.0],
+  [0.0,  15.0, 0.0, 0.0],
+  [0.0,  0.0,  5.0, 0.0],
+  [0.0,  0.0,  0.0, 5.0]
+])
+
+MEASUREMENT_COVAR = np.eye(2) * 0.0094
 
 class MultiViewTracker:
   def __init__(self, field: Field, camera_count: int):
@@ -122,7 +128,11 @@ class MultiViewTracker:
 
         t_positions.append(position)
 
-      # TODO: use kalman smoother
+      kf = KalmanFilter(transition_matrices=STATE_TRANSITION, transition_covariance=STATE_COVAR, observation_matrices=MEASUREMENT_FN, observation_covariance=MEASUREMENT_COVAR)
+      kf = kf.em(t_positions, n_iter=2)
+
+      t_positions = kf.smooth(t_positions)[0][:, :2]
+
       positions.append(t_positions)
 
     return positions
