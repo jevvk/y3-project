@@ -197,6 +197,12 @@ class MonoViewTracker:
 
     self._time += 1
 
+  def clean_tracklets(self):
+    # removes the sample descriptors for smaller file sizes
+    for tracklet in self._tracklets:
+      for sample in tracklet.samples:
+        sample.descriptor = None
+
   def get_tracklets(self):
     return self._tracklets
 
@@ -302,6 +308,7 @@ def main(config: dict, debug: bool):
           stop = True
           break
 
+    tracker.clean_tracklets()
     players = tracker.get_tracklets()
     file_path = os.path.join(PROJECT_DIR, out_dir, camera.name + '.track.data')
 
