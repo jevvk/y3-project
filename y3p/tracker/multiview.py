@@ -18,7 +18,9 @@ from y3p.player import Player
 from y3p.player.feature import distance as descriptor_distance
 
 INF_DISTANCE = 999999
-DISTANCE_THRESHOLD = 50.0
+DISTANCE_THRESHOLD = 75.0
+MINIMUM_THRESHOLD = 3
+TRACKLET_MIN_LIFE = 4
 FIELD_SCALE = 0.67
 
 STATE_TRANSITION = np.array([
@@ -73,8 +75,10 @@ class MultiViewTracker:
     for i, tracklet in enumerate(tracklets):
       assert isinstance(tracklet, Tracklet)
 
+      positions = self._get_tracklet_positions(tracklet)
+
       for j, track in enumerate(self._active_tracks):
-        dist_cost[i, j] = self._track_distance(camera, tracklet, track)
+        dist_cost[i, j] = self._track_distance(camera, tracklet, positions, track)
 
     cost = np.concatenate((dist_cost, cost), axis=1)
     # calculate matches using hungarian algorithm
@@ -98,6 +102,9 @@ class MultiViewTracker:
 
   def _create_tracks(self, camera: int, tracklets):
     for tracklet in tracklets:
+      if tracklet.last_time - tracklet.start_time < TRACKLET_MIN_LIFE:
+        continue
+
       track = Track(self._time)
 
       self._tracks.append(track)
@@ -111,29 +118,25 @@ class MultiViewTracker:
 
     track.last_time = max(track.last_time, tracklet.last_time)
     track.tracklets.append(tracklet)
+    track.tracklet_positions.append(self._get_tracklet_positions(tracklet))
 
     tracklets = sorted(track.tracklets, key=lambda t: t.start_time)
-    positions = self._get_tracklets_positions(camera, tracklets)
-    track.positions = self._flatten_positions(positions, tracklets)
+    track.positions = self._flatten_positions(track.tracklet_positions, tracklets)
 
-  def _get_tracklets_positions(self, camera: int, tracklets):
+  def _get_tracklet_positions(self, tracklet: Tracklet):
     positions = []
 
-    for t in tracklets:
-      t_positions = []
+    for sample in tracklet.filtered_samples:
+      player = Player([sample.x, sample.y, sample.height, sample.width, None, None], tracklet.camera)
+      position, _ = player.get_position(self._field)
 
-      for sample in t.filtered_samples:
-        player = Player([sample.x, sample.y, sample.height, sample.width, None, None], t.camera)
-        position, _ = player.get_position(self._field)
+      positions.append(position)
 
-        t_positions.append(position)
-
+    if len(positions) > 2:
       kf = KalmanFilter(transition_matrices=STATE_TRANSITION, transition_covariance=STATE_COVAR, observation_matrices=MEASUREMENT_FN, observation_covariance=MEASUREMENT_COVAR)
-      kf = kf.em(t_positions, n_iter=2)
+      kf = kf.em(positions, n_iter=5)
 
-      t_positions = kf.smooth(t_positions)[0][:, :2]
-
-      positions.append(t_positions)
+      positions = kf.smooth(positions)[0][:, :2]
 
     return positions
 
@@ -168,10 +171,23 @@ class MultiViewTracker:
 
     return cost
 
-  def _track_distance(self, camera: int, tracklet, track: Track):
+  def _track_distance(self, camera: int, tracklet, positions0, track: Track):
+    if len(positions0) < TRACKLET_MIN_LIFE:
+      return INF_DISTANCE
+
+    # track must not have multiple tracklets belonging to the same camera at the same time
+    for t_tracklet in track.tracklets:
+      if tracklet.camera != t_tracklet.camera:
+        continue
+
+      if tracklet.start_time <= t_tracklet.start_time <= tracklet.last_time:
+        return INF_DISTANCE
+
+      if t_tracklet.start_time <= tracklet.start_time <= t_tracklet.last_time:
+        return INF_DISTANCE
+
     dist = 0
 
-    positions0 = self._get_tracklets_positions(camera, [tracklet])[0]
     positions1 = track.positions
     index1 = self._time - track.start_time
 
@@ -179,8 +195,8 @@ class MultiViewTracker:
     y_diff = positions0[0][1] - positions1[index1][1]
 
     initial_dist = np.sqrt(x_diff ** 2 + y_diff ** 2)
-    mean_dist = 0
     delta_dist = 0
+    delta_pos = np.array([0.0, 0.0])
     count = 0
 
     for index0 in range(1, len(positions0)):
@@ -203,13 +219,17 @@ class MultiViewTracker:
       x_diff = positions0[index0][0] - positions1[index1 + index0][0]
       y_diff = positions0[index0][1] - positions1[index1 + index0][1]
 
-      mean_dist += np.sqrt(x_diff ** 2 + y_diff ** 2)
+      delta_pos += [x_diff, y_diff]
       count += 1
 
-    mean_dist /= count
-    dist = mean_dist + delta_dist * len(positions0) / count
+    if count < MINIMUM_THRESHOLD:
+      return INF_DISTANCE
 
-    # print(len(positions0), len(positions1), initial_dist, delta_dist, mean_dist, dist * 100)
+    mean_dist = np.sqrt(np.sum(delta_pos ** 2))
+    dist = (mean_dist + delta_dist / count) / np.log(count)
+    # dist = mean_dist
+
+    # print(len(positions0), len(positions1), count, initial_dist, delta_dist, mean_dist, dist * 100)
 
     return dist
 
@@ -236,10 +256,12 @@ class MultiViewTracker:
   def draw_courts(self, camera_colors):
     mono = self._create_court()
     multi = self._create_court()
+    multi2 = self._create_court()
 
     active_tracklets = []
+    active_tracklets_index = []
 
-    for track in self._active_tracks:
+    for index, track in enumerate(self._active_tracks):
       assert isinstance(track, Track)
 
       x, y = track.positions[self._time - track.start_time]
@@ -252,19 +274,22 @@ class MultiViewTracker:
 
         if start <= self._time < end:
           active_tracklets.append(tracklet)
+          active_tracklets_index.append(index)
 
       self._draw_position(multi, x, y, track.color)
 
-    for tracklet in active_tracklets:
+    for index, tracklet in zip(active_tracklets_index, active_tracklets):
       sample = tracklet.filtered_samples[self._time - tracklet.start_time]
       player = Player([sample.x, sample.y, sample.height, sample.width, None, None], tracklet.camera)
       position, _ = player.get_position(self._field)
       x, y = position
 
       self._draw_position(mono, x, y, camera_colors[tracklet.camera])
+      self._draw_position(multi2, x, y, self._active_tracks[index].color)
 
-    cv2.imshow('mono view tracked', cv2.resize(mono, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
-    cv2.imshow('multi view tracked', cv2.resize(multi, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
+    cv2.imshow('mono - tracklets', cv2.resize(mono, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
+    cv2.imshow('multi - tracks', cv2.resize(multi, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
+    cv2.imshow('multi - tracklets', cv2.resize(multi2, (0, 0), fx=450.0/self._field.size[0], fy=450.0/self._field.size[0]))
 
 def main(config: dict, debug: bool):
   cameras = []
@@ -315,9 +340,6 @@ def main(config: dict, debug: bool):
     if not has_more:
       break
 
-    tracker.forward(new_tracklets)
-    current_time += 1
-
     if debug:
       tracker.draw_courts(camera_colors)
       key = cv2.waitKey(interval) & 0xFF
@@ -325,8 +347,10 @@ def main(config: dict, debug: bool):
       if key == 32: # space
         interval = 42 if interval == 0 else 0
       if key == ord('q'):
-        stop = True
-        break
+        return
+
+    tracker.forward(new_tracklets)
+    current_time += 1
 
   print('Saving results.')
 
