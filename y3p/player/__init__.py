@@ -27,7 +27,7 @@ class Player:
     camera = field.get_camera(self.camera)
 
     position = field.get_position(self.camera, feet, use_homography=False)
-    if normalise: position /= field.size
+    if normalise: position /= field.size[0]
 
     T = np.dot(camera.R.T, -camera.T)
     diff = np.array([position[0], 0, position[1]]) + T

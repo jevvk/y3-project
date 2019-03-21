@@ -16,7 +16,7 @@ from y3p.player import Player
 from y3p.player.feature import distance as descriptor_distance
 
 INF_DISTANCE = 999999
-DISTANCE_THRESHOLD = 1.5
+DISTANCE_THRESHOLD = 25.0
 FIELD_SCALE = 0.67
 
 STATE_TRANSITION = np.array([
@@ -117,7 +117,7 @@ class MultiViewTracker:
       t_positions = []
 
       for sample in t.filtered_samples:
-        player = Player([sample.x, sample.y, sample.height, sample.width, None, None], camera)
+        player = Player([sample.x, sample.y, sample.height, sample.width, None, None], t.camera)
         position, _ = player.get_position(self._field)
 
         t_positions.append(position)
@@ -143,7 +143,7 @@ class MultiViewTracker:
         else:
           expanded.append([position])
 
-    flattened = list(map(lambda x: np.average(x, axis=0), expanded))
+    flattened = list(map(lambda x: np.mean(x, axis=0), expanded))
 
     return flattened
 
@@ -169,10 +169,12 @@ class MultiViewTracker:
     y_diff = positions0[0][1] - positions1[index1][1]
 
     initial_dist = np.sqrt(x_diff ** 2 + y_diff ** 2)
+    mean_dist = 0
     delta_dist = 0
+    count = 0
 
     for index0 in range(1, len(positions0)):
-      if len(positions1) >= index1 + index0:
+      if len(positions1) <= index1 + index0:
         break
 
       x_diff0 = positions0[index0][0] - positions0[index0 - 1][0]
@@ -184,9 +186,20 @@ class MultiViewTracker:
 
       delta_dist += np.sqrt(x_diff ** 2 + y_diff ** 2)
 
-    dist = initial_dist + np.sqrt(delta_dist)
-    print(dist, initial_dist, delta_dist)
-    # dist = initial_dist + delta_dist
+    for index0 in range(0, len(positions0)):
+      if len(positions1) <= index1 + index0:
+        break
+
+      x_diff = positions0[index0][0] - positions1[index1 + index0][0]
+      y_diff = positions0[index0][1] - positions1[index1 + index0][1]
+
+      mean_dist += np.sqrt(x_diff ** 2 + y_diff ** 2)
+      count += 1
+
+    mean_dist /= count
+    dist = mean_dist + delta_dist * len(positions0) / count
+
+    # print(len(positions0), len(positions1), initial_dist, delta_dist, mean_dist, dist * 100)
 
     return dist
 
@@ -203,7 +216,7 @@ class MultiViewTracker:
     overlay = frame.copy()
 
     x = int(x * self._field.size[0] * FIELD_SCALE + self._field.size[0] * (1 - FIELD_SCALE) / 2)
-    y = int(y * self._field.size[1] * FIELD_SCALE + self._field.size[1] * (1 - FIELD_SCALE) / 2)
+    y = int(y * self._field.size[0] * FIELD_SCALE + self._field.size[1] * (1 - FIELD_SCALE) / 2)
 
     cv2.circle(frame, (x, y), 15, color, thickness=-1)
     cv2.circle(overlay, (x, y), 15, color, thickness=-1)
@@ -252,7 +265,7 @@ def main(config: dict, debug: bool):
 
   stop = False
   interval = 42
-  field = Field(config, debug)
+  field = Field(config, False)
   tracker = MultiViewTracker(field, len(cameras))
   tracklets = []
   current_time = 0
