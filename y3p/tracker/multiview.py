@@ -116,12 +116,12 @@ class MultiViewTracker:
 
     assert isinstance(track, Track)
 
-    track.last_time = max(track.last_time, tracklet.last_time)
     track.tracklets.append(tracklet)
     track.tracklet_positions.append(self._get_tracklet_positions(tracklet))
 
     tracklets = sorted(track.tracklets, key=lambda t: t.start_time)
     track.positions = self._flatten_positions(track.tracklet_positions, tracklets)
+    track.last_time = track.start_time + len(track.positions) - 1
 
   def _get_tracklet_positions(self, tracklet: Tracklet):
     positions = []

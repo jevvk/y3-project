@@ -9,6 +9,7 @@ from y3p.field.points_gui import main as field_points_main
 from y3p.teams.detect import main as teams_detect_main
 from y3p.teams.train import main as teams_train_main
 from y3p.demo import main as demo_main
+from y3p.viewer import main as viewer_main
 
 def main(args):
   detector = None
@@ -52,6 +53,8 @@ def main(args):
       multiview_main(config, args.debug)
     elif args.mode == 'demo':
       demo_main(config, detector, args.debug)
+    elif args.mode == 'viewer':
+      viewer_main(config, detector, args.debug)
     else:
       # this shouldn't happen
       sys.exit(1)
@@ -61,7 +64,7 @@ if __name__ == '__main__':
 
   parser.add_argument('config')
   parser.add_argument('--model', choices=['mrcnn', 'none'], default='none')
-  parser.add_argument('--mode', choices=['demo', 'stage1', 'stage2', 'stage3', 'stage4'], default='demo')
+  parser.add_argument('--mode', choices=['demo', 'viewer', 'stage1', 'stage2', 'stage3', 'stage4'], default='demo')
   parser.add_argument('--debug', action='store_true')
   parser.set_defaults(debug=False)
 
