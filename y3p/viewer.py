@@ -47,7 +47,7 @@ def get_active_tracklets(tracks, time):
 
   return tracklets
 
-def draw_court_tracks(frame, tracks, time):
+def draw_court_tracks(frame, tracks, field: Field, time: int):
   overlay = frame.copy()
 
   for track in tracks:
@@ -56,8 +56,10 @@ def draw_court_tracks(frame, tracks, time):
     position = track.positions[time - track.start_time]
     court_x, court_y = position
 
-    court_x = int(court_x)
-    court_y = int(court_y)
+    court_x = court_x * field.size[0]
+    court_y = court_y * field.size[0]
+    court_x = int(court_x * FIELD_SCALE + field.size[0] * (1 - FIELD_SCALE) / 2)
+    court_y = int(court_y * FIELD_SCALE + field.size[1] * (1 - FIELD_SCALE) / 2)
 
     cv2.circle(frame, (court_x, court_y), 15, track.color, thickness=-1)
     cv2.circle(overlay, (court_x, court_y), 15, track.color, thickness=-1)
@@ -138,7 +140,7 @@ def main(config, detector, debug):
     active_tracks = list(filter(lambda t: t.last_time - t.start_time >= TRACK_MIN_LIFE, active_tracks))
     active_tracklets = get_active_tracklets(active_tracks, time)
 
-    draw_court_tracks(court, active_tracks, time)
+    draw_court_tracks(court, active_tracks, field, time)
     cv2.imshow('court', cv2.resize(court, (0, 0), fx=450.0/field.size[0], fy=450.0/field.size[0]))
 
     for i, camera, capture in zip(range(len(cameras)), cameras, captures):
