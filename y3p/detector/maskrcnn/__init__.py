@@ -2,7 +2,7 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from y3p.detector.maskrcnn.mrcnn import model
+from mrcnn.model import MaskRCNN
 
 from y3p import PROJECT_DIR
 from y3p.detector import Detector
@@ -18,7 +18,7 @@ class MaskRCNNDetector(Detector):
 
   def __init__(self):
     self.config = InferenceConfig()
-    self.model = model.MaskRCNN(mode="inference", model_dir=LOGS_PATH, config=self.config)
+    self.model = MaskRCNN(mode="inference", model_dir=LOGS_PATH, config=self.config)
 
     self.model.load_weights(MODEL_PATH, by_name=True)
 
